@@ -2,6 +2,7 @@
 #include <lvgl.h>
 #include "LGFX_Config.h"
 #include "ui/ui.h"
+#include "ui/screens.h"
 
 #define DISP_HOR_RES 320
 #define DISP_VER_RES 240
@@ -26,6 +27,8 @@ void my_disp_flush(lv_display_t *disp_drv, const lv_area_t *area, uint8_t *px_ma
 }
 
 uint32_t last_tick = 0;
+uint32_t startup_time = 0;
+bool screen_switched = false;
 
 void setup() {
     Serial.begin(115200);
@@ -46,6 +49,15 @@ void setup() {
 
     // Init UI
     ui_init();
+    
+    // Show the main screen first on startup
+    lv_scr_load(objects.main);
+    
+    // Record the startup time
+    startup_time = millis();
+    screen_switched = false;
+
+    Serial.println("Showing main screen. Will switch to scan screen in 25 seconds...");
 }
 
 void loop() {
@@ -56,5 +68,15 @@ void loop() {
     if (now - last_tick >= 1) {
         lv_tick_inc(now - last_tick);
         last_tick = now;
+    }
+    
+    // Check if 25 seconds have passed and we haven't switched screens yet
+    if (!screen_switched && (millis() - startup_time >= 25000)) {
+        screen_switched = true;
+        lv_scr_load(objects.scan);
+        Serial.println("Switched to scan screen after 25 seconds");
+        
+        // Optional: You can add a visual transition effect
+        // lv_scr_load_anim(objects.scan, LV_SCR_LOAD_ANIM_MOVE_LEFT, 300, 0, false);
     }
 }
